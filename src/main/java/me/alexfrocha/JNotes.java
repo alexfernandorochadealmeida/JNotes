@@ -1,6 +1,12 @@
 package me.alexfrocha;
 
+import com.formdev.flatlaf.util.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 
 public class JNotes {
@@ -9,36 +15,44 @@ public class JNotes {
     private static String diretorioDaPlanilha;
 
     public static void lerArquivo() throws Exception {
-        FileReader leituraDoArquivo = new FileReader(new File(diretorioDoArquivo));
-        BufferedReader arquivo = new BufferedReader(leituraDoArquivo);
+        PDDocument documento = PDDocument.load(new File(diretorioDoArquivo));
+        PDFTextStripper stripper = new PDFTextStripper();
 
-        String linha = arquivo.readLine();
-        while(linha != null) {
+        for(int pagina = 1; pagina <= documento.getNumberOfPages(); pagina++) {
 
-            if(linha.contains("JNOTES")) {
-                linha = arquivo.readLine();
-                while(!linha.contains("JEND")) {
-                    String produto = linha;
-                    produto = produto.replaceAll(" ", "").replace("-", ",");
-                    transferindoDados(produto);
+            String unencodeConteudo = stripper.getText(documento);
+            byte[] bytes = unencodeConteudo.getBytes(StandardCharsets.UTF_8);
+            String conteudo = new String(bytes, StandardCharsets.UTF_8);
 
-                    linha = arquivo.readLine();
+
+
+            String[] linhas = conteudo.split("\n");
+
+            for(int linha = 0; linha < linhas.length; linha++) {
+                if(linhas[linha].contains("JNOTES")) {
+                    linha++;
+                    while(!linhas[linha].contains("JEND")) {
+                        String coluna = linhas[linha].replaceAll(" ", "").replace("|", ",");
+                        transferindoDados(coluna);
+
+                        linha++;
+                    }
                 }
             }
-
-
-            linha = arquivo.readLine();
         }
-
-        arquivo.close();
-        leituraDoArquivo.close();
+        documento.close();
     }
 
     public static void transferindoDados(String dados) throws Exception {
-        diretorioDaPlanilha = diretorioDoArquivo.replace(".txt", ".csv");
-        Writer arquivo = new BufferedWriter(new FileWriter(diretorioDaPlanilha, true));
+        diretorioDaPlanilha = diretorioDoArquivo.replace(".pdf", ".csv");
+        FileOutputStream fos = new FileOutputStream(diretorioDaPlanilha, true);
+        OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.ISO_8859_1);
+        BufferedWriter arquivo = new BufferedWriter(osw);
+
             arquivo.append(dados);
             arquivo.append("\n");
+
+
         arquivo.close();
     }
 
