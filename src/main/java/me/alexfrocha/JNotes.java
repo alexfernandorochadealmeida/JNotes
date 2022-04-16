@@ -18,25 +18,17 @@ public class JNotes {
         PDDocument documento = PDDocument.load(new File(diretorioDoArquivo));
         PDFTextStripper stripper = new PDFTextStripper();
 
-        for(int pagina = 1; pagina <= documento.getNumberOfPages(); pagina++) {
+        String conteudo = stripper.getText(documento);
+        String[] linhas = conteudo.split("\n");
 
-            String unencodeConteudo = stripper.getText(documento);
-            byte[] bytes = unencodeConteudo.getBytes(StandardCharsets.UTF_8);
-            String conteudo = new String(bytes, StandardCharsets.UTF_8);
+        for(int linha = 0; linha < linhas.length; linha++) {
+            if(linhas[linha].contains("JNOTES")) {
+                linha++;
+                while(!linhas[linha].contains("JEND")) {
+                    String coluna = linhas[linha].replaceAll(" ", "").replace("|", ",");
+                    transferindoDados(coluna);
 
-
-
-            String[] linhas = conteudo.split("\n");
-
-            for(int linha = 0; linha < linhas.length; linha++) {
-                if(linhas[linha].contains("JNOTES")) {
                     linha++;
-                    while(!linhas[linha].contains("JEND")) {
-                        String coluna = linhas[linha].replaceAll(" ", "").replace("|", ",");
-                        transferindoDados(coluna);
-
-                        linha++;
-                    }
                 }
             }
         }
